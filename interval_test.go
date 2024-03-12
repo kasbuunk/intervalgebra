@@ -22,13 +22,104 @@ func TestAttributes(t *testing.T) {
 	}
 }
 
-func TestPrecedes(t *testing.T) {
-	interval := New(time.Now(), time.Second)
-	other := New(time.Now().Add(time.Minute), time.Second)
-	if !interval.Precedes(other) {
-		t.Error("first should precede second")
+func TestRelations(t *testing.T) {
+	now := time.Now()
+	intervalA := New(now, time.Minute)
+	testCases := []struct {
+		name     string
+		a        Interval
+		b        Interval
+		relation Relation
+	}{
+		{
+			name:     "APrecedesB",
+			a:        intervalA,
+			b:        New(now.Add(time.Hour), time.Minute),
+			relation: intervalA.Precedes,
+		},
+		{
+			name:     "AIsPrecededByB",
+			a:        intervalA,
+			b:        New(now.Add(-time.Hour), time.Minute),
+			relation: intervalA.IsPrecededBy,
+		},
+		{
+			name:     "AMeetsB",
+			a:        intervalA,
+			b:        New(now.Add(time.Minute), time.Minute),
+			relation: intervalA.Meets,
+		},
+		{
+			name:     "AIsMetByB",
+			a:        intervalA,
+			b:        New(now.Add(-time.Minute), time.Minute),
+			relation: intervalA.IsMetBy,
+		},
+		{
+			name:     "AOverlapsWithB",
+			a:        intervalA,
+			b:        New(now.Add(30*time.Second), time.Minute),
+			relation: intervalA.OverlapsWith,
+		},
+		{
+			name:     "AIsOverlappedByB",
+			a:        intervalA,
+			b:        New(now.Add(-30*time.Second), time.Minute),
+			relation: intervalA.IsOverlappedBy,
+		},
+		{
+			name:     "AStartsB",
+			a:        intervalA,
+			b:        New(now, 2*time.Minute),
+			relation: intervalA.Starts,
+		},
+		{
+			name:     "AIsStartedByB",
+			a:        intervalA,
+			b:        New(now, 30*time.Second),
+			relation: intervalA.IsStartedBy,
+		},
+		{
+			name:     "ADuringB",
+			a:        intervalA,
+			b:        New(now.Add(-time.Minute), 3*time.Minute),
+			relation: intervalA.During,
+		},
+		{
+			name:     "AContainsB",
+			a:        intervalA,
+			b:        New(now.Add(15*time.Second), 30*time.Second),
+			relation: intervalA.Contains,
+		},
+		{
+			name:     "AFinishesB",
+			a:        intervalA,
+			b:        New(now.Add(-time.Minute), 2*time.Minute),
+			relation: intervalA.Finishes,
+		},
+		{
+			name:     "AIsFinishedByB",
+			a:        intervalA,
+			b:        New(now.Add(30*time.Second), 30*time.Second),
+			relation: intervalA.IsFinishedBy,
+		},
+		{
+			name:     "AEqualsB",
+			a:        intervalA,
+			b:        New(now, time.Minute),
+			relation: intervalA.Equals,
+		},
 	}
-	if other.Precedes(interval) {
-		t.Error("second should not precede first")
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if !testCase.relation(testCase.b) {
+				t.Errorf(
+					"relation failed: \nA.start %v, A.end: %v;\nB.start %v, b.end: %v",
+					testCase.a.Start(), testCase.a.End(),
+					testCase.b.Start(), testCase.b.End(),
+				)
+			}
+		})
 	}
 }
